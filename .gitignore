@@ -1,6 +1,9 @@
 node_modules
 dist
 .firebase
+.chrome-check-*
+.chrome-debug
+*-check.png
 .DS_Store
 .env
 *.local

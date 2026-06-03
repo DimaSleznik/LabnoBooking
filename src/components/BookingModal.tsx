@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { Booking, BookingType } from '../types'
-import { TYPE_LABELS, TYPE_COLORS, formatDate, todayStr } from '../utils'
+import {
+  TYPE_LABELS, TYPE_COLORS, formatDate, todayStr,
+  formatBelarusPhoneInput, normalizeBelarusPhone, phoneTelHref
+} from '../utils'
 import { generateId } from '../store'
 
 interface Props {
@@ -52,7 +55,7 @@ export default function BookingModal({ booking, initialDate, onSave, onDelete, o
       id: form.id || generateId(),
       createdAt: form.createdAt || now,
       guestName: form.guestName.trim(),
-      phone: form.phone.trim(),
+      phone: normalizeBelarusPhone(form.phone),
       price: form.price || undefined,
       notes: form.notes?.trim() || undefined
     })
@@ -122,7 +125,7 @@ export default function BookingModal({ booking, initialDate, onSave, onDelete, o
                     <div className="detail-row-content">
                       <div className="detail-row-label">Телефон</div>
                       <div className="detail-row-value">
-                        <a href={`tel:${booking.phone}`} style={{ color: 'var(--amber)', textDecoration: 'none' }}>
+                        <a href={`tel:${phoneTelHref(booking.phone)}`} style={{ color: 'var(--amber)', textDecoration: 'none' }}>
                           {booking.phone}
                         </a>
                       </div>
@@ -228,9 +231,10 @@ export default function BookingModal({ booking, initialDate, onSave, onDelete, o
                 <input
                   type="tel"
                   className="form-input"
-                  placeholder="+7 999 000 00 00"
+                  placeholder="+375 (29) 000-00-00"
                   value={form.phone}
-                  onChange={e => set('phone', e.target.value)}
+                  onChange={e => set('phone', formatBelarusPhoneInput(e.target.value))}
+                  inputMode="tel"
                 />
               </div>
 

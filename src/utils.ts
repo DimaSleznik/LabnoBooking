@@ -81,3 +81,40 @@ export const TYPE_COLORS: Record<BookingType, string> = {
 export function todayStr(): string {
   return format(new Date(), 'yyyy-MM-dd')
 }
+
+export function formatBelarusPhoneInput(value: string): string {
+  let digits = value.replace(/\D/g, '')
+
+  if (digits.startsWith('80')) {
+    digits = `375${digits.slice(2)}`
+  } else if (digits.startsWith('0')) {
+    digits = `375${digits.slice(1)}`
+  } else if (!digits.startsWith('375')) {
+    digits = `375${digits}`
+  }
+
+  digits = digits.slice(0, 12)
+
+  const operator = digits.slice(3, 5)
+  const first = digits.slice(5, 8)
+  const second = digits.slice(8, 10)
+  const third = digits.slice(10, 12)
+
+  let formatted = '+375'
+  if (operator) formatted += ` (${operator}`
+  if (operator.length === 2) formatted += ')'
+  if (first) formatted += ` ${first}`
+  if (second) formatted += `-${second}`
+  if (third) formatted += `-${third}`
+
+  return formatted
+}
+
+export function normalizeBelarusPhone(value: string): string {
+  return value.trim() ? formatBelarusPhoneInput(value) : ''
+}
+
+export function phoneTelHref(value: string): string {
+  const digits = normalizeBelarusPhone(value).replace(/\D/g, '')
+  return digits ? `+${digits}` : ''
+}

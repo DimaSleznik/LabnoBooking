@@ -233,7 +233,7 @@ body {
 
 .calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   padding: 0 8px;
   margin-bottom: 4px;
 }
@@ -250,13 +250,14 @@ body {
 
 .calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   padding: 0 8px;
   gap: 2px;
 }
 
 .calendar-day {
   aspect-ratio: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -809,3 +810,136 @@ textarea.form-input {
 .badge-house { background: var(--house-dim); color: var(--house); }
 .badge-sauna { background: var(--sauna-dim); color: var(--sauna); }
 .badge-both { background: var(--both-dim); color: var(--both); }
+
+@media (min-width: 760px) {
+  body {
+    background:
+      linear-gradient(90deg, rgba(0, 0, 0, 0.16), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.16)),
+      var(--bg);
+  }
+
+  #root {
+    align-items: center;
+  }
+
+  .app {
+    width: min(100%, 980px);
+    min-height: 100dvh;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .header {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .header-title {
+    font-size: 26px;
+  }
+
+  .header-sub {
+    font-size: 13px;
+  }
+
+  .view {
+    width: 100%;
+    padding-bottom: 92px;
+  }
+
+  .calendar-nav {
+    padding: 22px 28px 16px;
+  }
+
+  .calendar-month {
+    font-size: 26px;
+  }
+
+  .calendar-weekdays,
+  .calendar-grid {
+    padding-left: 28px;
+    padding-right: 28px;
+  }
+
+  .calendar-grid {
+    gap: 6px;
+  }
+
+  .calendar-day {
+    aspect-ratio: auto;
+    height: 72px;
+    min-height: 72px;
+    border: 1px solid transparent;
+  }
+
+  .calendar-day:hover {
+    background: var(--surface-2);
+    border-color: var(--border);
+  }
+
+  .day-panel,
+  .list-section {
+    margin-left: 28px;
+    margin-right: 28px;
+  }
+
+  .list-section {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .list-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .list-cards .booking-card {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .list-cards .booking-card:nth-child(odd) {
+    border-right: 1px solid var(--border);
+  }
+
+  .booking-card:hover {
+    background: var(--surface-2);
+  }
+
+  .bottom-nav {
+    left: 50%;
+    right: auto;
+    width: min(100%, 980px);
+    transform: translateX(-50%);
+  }
+
+  .modal-overlay {
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+  }
+
+  .modal-sheet {
+    width: min(100%, 540px);
+    max-height: min(760px, 90dvh);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    animation: fadeIn 0.18s ease;
+  }
+
+  .modal-handle {
+    display: none;
+  }
+}
+
+@media (min-width: 1120px) {
+  .app,
+  .bottom-nav {
+    width: min(100%, 1120px);
+  }
+
+  .calendar-day {
+    height: 86px;
+    min-height: 86px;
+  }
+}

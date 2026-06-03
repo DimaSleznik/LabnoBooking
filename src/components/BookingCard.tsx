@@ -1,5 +1,5 @@
 import { Booking } from '../types'
-import { TYPE_LABELS, TYPE_COLORS, formatDateShort } from '../utils'
+import { TYPE_LABELS, TYPE_COLORS, formatDateShort, normalizeBelarusPhone } from '../utils'
 
 interface Props {
   booking: Booking
@@ -10,6 +10,7 @@ export default function BookingCard({ booking, onClick }: Props) {
   const color = TYPE_COLORS[booking.type]
   const label = TYPE_LABELS[booking.type]
   const sameDay = booking.startDate === booking.endDate
+  const phone = booking.phone ? normalizeBelarusPhone(booking.phone) : ''
 
   return (
     <div className="booking-card" onClick={() => onClick(booking)}>
@@ -20,7 +21,7 @@ export default function BookingCard({ booking, onClick }: Props) {
           {sameDay
             ? formatDateShort(booking.startDate)
             : `${formatDateShort(booking.startDate)} — ${formatDateShort(booking.endDate)}`}
-          {booking.phone ? ` · ${booking.phone}` : ''}
+          {phone ? ` · ${phone}` : ''}
         </div>
       </div>
       <span
