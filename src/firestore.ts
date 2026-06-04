@@ -8,6 +8,15 @@ import { Booking, Contact } from './types'
 const COL = 'bookings'
 const CONTACTS_COL = 'contacts'
 
+/** Firestore не принимает поля со значением undefined — убираем их перед записью */
+function stripUndefined<T extends object>(obj: T): T {
+  const out = {} as Record<string, unknown>
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) out[k] = v
+  }
+  return out as T
+}
+
 /**
  * Подписка на все брони — вызывается при любом изменении на любом устройстве.
  * Возвращает функцию отписки.
@@ -32,7 +41,7 @@ export function subscribeBookings(
 
 /** Создать или обновить бронь */
 export async function saveBooking(booking: Booking): Promise<void> {
-  await setDoc(doc(db, COL, booking.id), booking)
+  await setDoc(doc(db, COL, booking.id), stripUndefined(booking))
 }
 
 /** Удалить бронь */
@@ -63,7 +72,7 @@ export function subscribeContacts(
 
 /** Создать или обновить контакт */
 export async function saveContact(contact: Contact): Promise<void> {
-  await setDoc(doc(db, CONTACTS_COL, contact.id), contact)
+  await setDoc(doc(db, CONTACTS_COL, contact.id), stripUndefined(contact))
 }
 
 /** Удалить контакт */
