@@ -12,4 +12,12 @@ export interface Booking {
   createdAt: string
 }
 
-export type View = 'calendar' | 'list'
+export interface Contact {
+  id: string
+  name: string
+  phone: string
+  notes?: string
+  createdAt: string
+}
+
+export type View = 'calendar' | 'list' | 'contacts'

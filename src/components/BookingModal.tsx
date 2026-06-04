@@ -1,16 +1,18 @@
-import { useState, useEffect } from 'react'
-import { Booking, BookingType } from '../types'
+import { useState, useEffect, useMemo } from 'react'
+import { Booking, BookingType, Contact } from '../types'
 import {
   TYPE_LABELS, TYPE_COLORS, formatDate, todayStr,
-  formatBelarusPhoneInput, normalizeBelarusPhone, phoneTelHref
+  formatBelarusPhoneInput, normalizeBelarusPhone, phoneTelHref, phoneKey
 } from '../utils'
 import { generateId } from '../store'
 
 interface Props {
   booking?: Booking | null
   initialDate?: string
+  contacts: Contact[]
   onSave: (b: Booking) => void
   onDelete: (id: string) => void
+  onSaveContact: (c: Contact) => void
   onClose: () => void
 }
 
@@ -26,9 +28,12 @@ const EMPTY: Omit<Booking, 'id' | 'createdAt'> = {
   notes: ''
 }
 
-export default function BookingModal({ booking, initialDate, onSave, onDelete, onClose }: Props) {
+export default function BookingModal({ booking, initialDate, contacts, onSave, onDelete, onSaveContact, onClose }: Props) {
   const isNew = !booking
   const [mode, setMode] = useState<ModalMode>(isNew ? 'edit' : 'view')
+  const [error, setError] = useState<string | null>(null)
+  const [saveToContacts, setSaveToContacts] = useState(true)
+  const [showSuggest, setShowSuggest] = useState(false)
 
   const [form, setForm] = useState(() => {
     if (booking) return { ...booking }
@@ -45,17 +50,63 @@ export default function BookingModal({ booking, initialDate, onSave, onDelete, o
 
   function set<K extends keyof typeof form>(k: K, v: typeof form[K]) {
     setForm(f => ({ ...f, [k]: v }))
+    if (error) setError(null)
+  }
+
+  // Подсказки из контактов по имени или телефону
+  const suggestions = useMemo(() => {
+    const q = form.guestName.trim().toLowerCase()
+    const qPhone = phoneKey(form.phone)
+    if (!q && !qPhone) return []
+    return contacts
+      .filter(c => {
+        const byName = q && c.name.toLowerCase().includes(q)
+        const byPhone = qPhone.length >= 2 && phoneKey(c.phone).includes(qPhone)
+        return byName || byPhone
+      })
+      // не показываем подсказку, если поля уже точно совпадают с контактом
+      .filter(c => !(c.name.toLowerCase() === q && phoneKey(c.phone) === qPhone))
+      .slice(0, 5)
+  }, [contacts, form.guestName, form.phone])
+
+  function pickContact(c: Contact) {
+    setForm(f => ({ ...f, guestName: c.name, phone: normalizeBelarusPhone(c.phone) }))
+    setShowSuggest(false)
+    setError(null)
+  }
+
+  function upsertContact(name: string, phone: string) {
+    const key = phoneKey(phone)
+    const existing = key ? contacts.find(c => phoneKey(c.phone) === key) : undefined
+    if (existing) {
+      if (existing.name !== name || existing.phone !== phone) {
+        onSaveContact({ ...existing, name, phone })
+      }
+      return
+    }
+    onSaveContact({
+      id: generateId(),
+      name,
+      phone,
+      createdAt: new Date().toISOString()
+    })
   }
 
   function handleSave() {
-    if (!form.startDate || !form.endDate || !form.guestName.trim()) return
+    const name = form.guestName.trim()
+    const phone = normalizeBelarusPhone(form.phone)
+    if (!name) { setError('Укажите имя гостя'); return }
+    if (!phoneKey(phone)) { setError('Укажите номер телефона'); return }
+    if (!form.startDate || !form.endDate) { setError('Укажите даты заезда и выезда'); return }
+
     const now = new Date().toISOString()
+    if (saveToContacts) upsertContact(name, phone)
     onSave({
       ...form,
       id: form.id || generateId(),
       createdAt: form.createdAt || now,
-      guestName: form.guestName.trim(),
-      phone: normalizeBelarusPhone(form.phone),
+      guestName: name,
+      phone,
       price: form.price || undefined,
       notes: form.notes?.trim() || undefined
     })
@@ -214,26 +265,37 @@ export default function BookingModal({ booking, initialDate, onSave, onDelete, o
               </div>
 
               {/* Guest */}
-              <div className="form-group">
+              <div className="form-group" style={{ position: 'relative' }}>
                 <label className="form-label">Имя гостя *</label>
                 <input
                   type="text"
                   className="form-input"
                   placeholder="Имя / Фамилия"
                   value={form.guestName}
-                  onChange={e => set('guestName', e.target.value)}
+                  onChange={e => { set('guestName', e.target.value); setShowSuggest(true) }}
+                  onFocus={() => setShowSuggest(true)}
                 />
+                {showSuggest && suggestions.length > 0 && (
+                  <div className="contact-suggest">
+                    {suggestions.map(c => (
+                      <button key={c.id} type="button" className="contact-suggest-item" onClick={() => pickContact(c)}>
+                        <span className="contact-suggest-name">{c.name}</span>
+                        {c.phone && <span className="contact-suggest-phone">{c.phone}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Phone */}
               <div className="form-group">
-                <label className="form-label">Телефон</label>
+                <label className="form-label">Телефон *</label>
                 <input
                   type="tel"
                   className="form-input"
                   placeholder="+375 (29) 000-00-00"
                   value={form.phone}
-                  onChange={e => set('phone', formatBelarusPhoneInput(e.target.value))}
+                  onChange={e => { set('phone', formatBelarusPhoneInput(e.target.value)); setShowSuggest(true) }}
                   inputMode="tel"
                 />
               </div>
@@ -262,18 +324,25 @@ export default function BookingModal({ booking, initialDate, onSave, onDelete, o
                   rows={3}
                 />
               </div>
+
+              {/* Save to contacts */}
+              <label className="form-check">
+                <input
+                  type="checkbox"
+                  checked={saveToContacts}
+                  onChange={e => setSaveToContacts(e.target.checked)}
+                />
+                <span>Сохранить в контакты</span>
+              </label>
+
+              {error && <div className="form-error">{error}</div>}
             </div>
 
             <div className="modal-actions">
               {!isNew && (
                 <button className="btn-ghost" onClick={() => setMode('view')}>Отмена</button>
               )}
-              <button
-                className="btn-primary"
-                onClick={handleSave}
-                disabled={!form.guestName.trim() || !form.startDate || !form.endDate}
-                style={{ opacity: !form.guestName.trim() ? 0.5 : 1 }}
-              >
+              <button className="btn-primary" onClick={handleSave}>
                 {isNew ? 'Добавить бронь' : 'Сохранить'}
               </button>
             </div>

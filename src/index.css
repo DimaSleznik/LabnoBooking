@@ -793,6 +793,188 @@ textarea.form-input {
   color: var(--amber);
 }
 
+/* ── Form check & error ── */
+.form-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.form-check input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--amber);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.form-error {
+  font-size: 13px;
+  color: var(--danger);
+  background: rgba(192, 72, 72, 0.1);
+  border: 1px solid rgba(192, 72, 72, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+/* ── Contact suggestions (in booking modal) ── */
+.contact-suggest {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  background: var(--surface-3);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  z-index: 5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.contact-suggest-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 11px 14px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  color: var(--text);
+  font-family: 'Jost', sans-serif;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.contact-suggest-item:last-child { border-bottom: none; }
+.contact-suggest-item:active,
+.contact-suggest-item:hover { background: var(--surface-2); }
+
+.contact-suggest-name { font-weight: 500; }
+.contact-suggest-phone { font-size: 12px; color: var(--text-3); flex-shrink: 0; }
+
+/* ── Contacts view ── */
+.contacts-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 16px 16px 4px;
+}
+
+.contacts-add-btn {
+  flex-shrink: 0;
+  width: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--amber);
+  color: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.contacts-add-btn:active { transform: scale(0.94); background: var(--amber-dim); }
+
+.contacts-list {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.contact-block { border-bottom: 1px solid var(--border); }
+.contact-block:last-child { border-bottom: none; }
+
+.contact-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.contact-row:active { background: var(--surface-3); }
+
+.contact-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--amber);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.contact-info { flex: 1; min-width: 0; }
+
+.contact-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.contact-sub {
+  font-size: 12px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+.contact-action {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.12s;
+  text-decoration: none;
+}
+
+.contact-action:active { transform: scale(0.9); color: var(--amber); }
+
+.contact-bookings {
+  background: var(--surface-2);
+  border-top: 1px solid var(--border);
+}
+
+.contact-notes {
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-2);
+  border-bottom: 1px solid var(--border);
+  white-space: pre-wrap;
+}
+
+.contact-bookings-empty {
+  padding: 16px 14px;
+  font-size: 13px;
+  color: var(--text-3);
+  text-align: center;
+}
+
 /* ── Sync pulse ── */
 @keyframes pulse {
   0%, 100% { opacity: 0.4; transform: scale(0.9); }

@@ -1,12 +1,17 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Booking, View } from './types'
-import { loadBookings, persistBookings } from './store'
-import { subscribeBookings, saveBooking, removeBooking } from './firestore'
+import { useState, useEffect } from 'react'
+import { Booking, Contact, View } from './types'
+import { loadBookings, persistBookings, loadContacts, persistContacts } from './store'
+import {
+  subscribeBookings, saveBooking, removeBooking,
+  subscribeContacts, saveContact, removeContact
+} from './firestore'
 import { todayStr, sortedUpcoming } from './utils'
 import BottomNav from './components/BottomNav'
 import CalendarView from './components/CalendarView'
 import ListView from './components/ListView'
+import ContactsView from './components/ContactsView'
 import BookingModal from './components/BookingModal'
+import ContactModal from './components/ContactModal'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
@@ -16,14 +21,17 @@ export default function App() {
   const [view, setView] = useState<View>('calendar')
   // Стартуем с localStorage — мгновенный рендер без ожидания Firebase
   const [bookings, setBookings] = useState<Booking[]>(() => loadBookings())
+  const [contacts, setContacts] = useState<Contact[]>(() => loadContacts())
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('syncing')
   const [showModal, setShowModal] = useState(false)
   const [editBooking, setEditBooking] = useState<Booking | null>(null)
   const [initialDate, setInitialDate] = useState<string | undefined>()
+  const [showContactModal, setShowContactModal] = useState(false)
+  const [editContact, setEditContact] = useState<Contact | null>(null)
 
   // Подписка на Firestore — обновляет UI на всех устройствах в реальном времени
   useEffect(() => {
-    const unsubscribe = subscribeBookings(
+    const unsubBookings = subscribeBookings(
       (data) => {
         setBookings(data)
         persistBookings(data) // кешируем локально для офлайна
@@ -31,7 +39,14 @@ export default function App() {
       },
       () => setSyncStatus('offline')
     )
-    return unsubscribe
+    const unsubContacts = subscribeContacts(
+      (data) => {
+        setContacts(data)
+        persistContacts(data)
+      },
+      () => setSyncStatus('offline')
+    )
+    return () => { unsubBookings(); unsubContacts() }
   }, [])
 
   function openAdd(date?: string) {
@@ -62,6 +77,48 @@ export default function App() {
     await removeBooking(id)
   }
 
+  async function handleSaveContact(c: Contact) {
+    // оптимистичное обновление, чтобы подсказки работали даже офлайн
+    setContacts(prev => {
+      const next = prev.some(x => x.id === c.id)
+        ? prev.map(x => (x.id === c.id ? c : x))
+        : [...prev, c]
+      persistContacts(next)
+      return next
+    })
+    await saveContact(c)
+  }
+
+  function openAddContact() {
+    setEditContact(null)
+    setShowContactModal(true)
+  }
+
+  function openEditContact(c: Contact) {
+    setEditContact(c)
+    setShowContactModal(true)
+  }
+
+  function closeContactModal() {
+    setShowContactModal(false)
+    setEditContact(null)
+  }
+
+  async function handleContactModalSave(c: Contact) {
+    closeContactModal()
+    await handleSaveContact(c)
+  }
+
+  async function handleDeleteContact(id: string) {
+    closeContactModal()
+    setContacts(prev => {
+      const next = prev.filter(x => x.id !== id)
+      persistContacts(next)
+      return next
+    })
+    await removeContact(id)
+  }
+
   const today = format(new Date(), 'EEEE, d MMMM', { locale: ru })
   const upcomingCount = sortedUpcoming(bookings).length
 
@@ -70,6 +127,13 @@ export default function App() {
     synced:  { color: 'var(--both)',  title: 'Синхронизировано' },
     offline: { color: 'var(--house)', title: 'Офлайн — данные из кеша' },
   }[syncStatus]
+
+  const headerSub =
+    view === 'contacts'
+      ? (contacts.length > 0 ? `${contacts.length} контакт${contacts.length === 1 ? '' : contacts.length < 5 ? 'а' : 'ов'} · ${today}` : today)
+      : (upcomingCount > 0
+          ? `${upcomingCount} предстоящ${upcomingCount === 1 ? 'ая' : 'их'} · ${today}`
+          : today)
 
   return (
     <div className="app">
@@ -90,12 +154,14 @@ export default function App() {
             />
           </div>
           <div className="header-sub" style={{ textTransform: 'capitalize' }}>
-            {upcomingCount > 0
-              ? `${upcomingCount} предстоящ${upcomingCount === 1 ? 'ая' : 'их'} · ${today}`
-              : today}
+            {headerSub}
           </div>
         </div>
-        <button className="header-btn" onClick={() => openAdd()} title="Добавить бронь">
+        <button
+          className="header-btn"
+          onClick={() => (view === 'contacts' ? openAddContact() : openAdd())}
+          title={view === 'contacts' ? 'Добавить контакт' : 'Добавить бронь'}
+        >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -111,10 +177,18 @@ export default function App() {
             onAddForDate={openAdd}
             onEdit={openEdit}
           />
-        ) : (
+        ) : view === 'list' ? (
           <ListView
             bookings={bookings}
             onEdit={openEdit}
+          />
+        ) : (
+          <ContactsView
+            contacts={contacts}
+            bookings={bookings}
+            onEditContact={openEditContact}
+            onAddContact={openAddContact}
+            onEditBooking={openEdit}
           />
         )}
       </main>
@@ -126,14 +200,25 @@ export default function App() {
         onAdd={() => openAdd()}
       />
 
-      {/* Modal */}
+      {/* Modals */}
       {showModal && (
         <BookingModal
           booking={editBooking}
           initialDate={initialDate}
+          contacts={contacts}
           onSave={handleSave}
           onDelete={handleDelete}
+          onSaveContact={handleSaveContact}
           onClose={closeModal}
+        />
+      )}
+
+      {showContactModal && (
+        <ContactModal
+          contact={editContact}
+          onSave={handleContactModalSave}
+          onDelete={handleDeleteContact}
+          onClose={closeContactModal}
         />
       )}
     </div>

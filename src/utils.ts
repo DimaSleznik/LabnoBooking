@@ -118,3 +118,20 @@ export function phoneTelHref(value: string): string {
   const digits = normalizeBelarusPhone(value).replace(/\D/g, '')
   return digits ? `+${digits}` : ''
 }
+
+/** Ключ для сопоставления телефона между контактами и бронями (только цифры). */
+export function phoneKey(value: string): string {
+  return (value || '').replace(/\D/g, '')
+}
+
+/** Брони, относящиеся к контакту — по совпадению телефона, иначе по имени. */
+export function bookingsForContact(bookings: Booking[], contact: { name: string; phone: string }): Booking[] {
+  const key = phoneKey(contact.phone)
+  const name = contact.name.trim().toLowerCase()
+  return [...bookings]
+    .filter(b => {
+      if (key) return phoneKey(b.phone) === key
+      return name ? b.guestName.trim().toLowerCase() === name : false
+    })
+    .sort((a, b) => compareAsc(parseISO(b.startDate), parseISO(a.startDate)))
+}
