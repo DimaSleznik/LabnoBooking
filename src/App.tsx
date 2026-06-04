@@ -197,7 +197,6 @@ export default function App() {
       <BottomNav
         view={view}
         onViewChange={setView}
-        onAdd={() => openAdd()}
       />
 
       {/* Modals */}

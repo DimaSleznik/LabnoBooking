@@ -53,12 +53,13 @@ export default function BookingModal({ booking, initialDate, contacts, onSave, o
     if (error) setError(null)
   }
 
-  // Подсказки из контактов по имени или телефону
+  // Подсказки из контактов: при пустом поле — все контакты, иначе фильтр по имени/телефону
   const suggestions = useMemo(() => {
     const q = form.guestName.trim().toLowerCase()
     const qPhone = phoneKey(form.phone)
-    if (!q && !qPhone) return []
-    return contacts
+    const list = [...contacts].sort((a, b) => a.name.localeCompare(b.name, 'ru'))
+    if (!q && !qPhone) return list.slice(0, 50)
+    return list
       .filter(c => {
         const byName = q && c.name.toLowerCase().includes(q)
         const byPhone = qPhone.length >= 2 && phoneKey(c.phone).includes(qPhone)
@@ -66,7 +67,7 @@ export default function BookingModal({ booking, initialDate, contacts, onSave, o
       })
       // не показываем подсказку, если поля уже точно совпадают с контактом
       .filter(c => !(c.name.toLowerCase() === q && phoneKey(c.phone) === qPhone))
-      .slice(0, 5)
+      .slice(0, 50)
   }, [contacts, form.guestName, form.phone])
 
   function pickContact(c: Contact) {
@@ -95,9 +96,13 @@ export default function BookingModal({ booking, initialDate, contacts, onSave, o
   function handleSave() {
     const name = form.guestName.trim()
     const phone = normalizeBelarusPhone(form.phone)
+    // Обязательны только имя и телефон — остальные поля опциональны
     if (!name) { setError('Укажите имя гостя'); return }
     if (!phoneKey(phone)) { setError('Укажите номер телефона'); return }
-    if (!form.startDate || !form.endDate) { setError('Укажите даты заезда и выезда'); return }
+
+    // Даты опциональны: если не указаны — подставляем сегодня
+    const startDate = form.startDate || todayStr()
+    const endDate = form.endDate && form.endDate >= startDate ? form.endDate : startDate
 
     const now = new Date().toISOString()
     if (saveToContacts) upsertContact(name, phone)
@@ -105,6 +110,8 @@ export default function BookingModal({ booking, initialDate, contacts, onSave, o
       ...form,
       id: form.id || generateId(),
       createdAt: form.createdAt || now,
+      startDate,
+      endDate,
       guestName: name,
       phone,
       price: form.price || undefined,
@@ -265,8 +272,19 @@ export default function BookingModal({ booking, initialDate, contacts, onSave, o
               </div>
 
               {/* Guest */}
-              <div className="form-group" style={{ position: 'relative' }}>
-                <label className="form-label">Имя гостя *</label>
+              <div className="form-group">
+                <div className="form-label-row">
+                  <label className="form-label">Имя гостя *</label>
+                  {contacts.length > 0 && (
+                    <button
+                      type="button"
+                      className="form-label-action"
+                      onClick={() => setShowSuggest(s => !s)}
+                    >
+                      {showSuggest ? 'Скрыть' : `Из контактов (${contacts.length})`}
+                    </button>
+                  )}
+                </div>
                 <input
                   type="text"
                   className="form-input"

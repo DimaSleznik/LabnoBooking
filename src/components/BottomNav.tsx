@@ -3,10 +3,9 @@ import { View } from '../types'
 interface Props {
   view: View
   onViewChange: (v: View) => void
-  onAdd: () => void
 }
 
-export default function BottomNav({ view, onViewChange, onAdd }: Props) {
+export default function BottomNav({ view, onViewChange }: Props) {
   return (
     <nav className="bottom-nav">
       <button
@@ -35,13 +34,6 @@ export default function BottomNav({ view, onViewChange, onAdd }: Props) {
           <circle cx="3.5" cy="18" r="1.2" fill="currentColor" stroke="none"/>
         </svg>
         Список
-      </button>
-
-      <button className="nav-add" onClick={onAdd} aria-label="Добавить бронь">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-          <line x1="12" y1="5" x2="12" y2="19"/>
-          <line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
       </button>
 
       <button
